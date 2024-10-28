@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Endless Runner Game</title>
+    <style>
+        .game-container {
+            width: 600px;
+            height: 200px;
+            border: 1px solid black;
+            margin: 50px auto;
+            position: relative;
+            overflow: hidden;
+            background-color: #f0f0f0;
+        }
+        
+        #player {
+            width: 40px;
+            height: 40px;
+            background-color: #333;
+            position: absolute;
+            bottom: 0;
+            left: 50px;
+        }
+        
+        .obstacle {
+            width: 20px;
+            height: 40px;
+            background-color: #f00;
+            position: absolute;
+            bottom: 0;
+            right: 0;
+        }
+        
+        #score {
+            text-align: center;
+            font-family: Arial, sans-serif;
+            font-size: 24px;
+            margin-top: 20px;
+        }
+        
+        #game-over {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: Arial, sans-serif;
+            font-size: 30px;
+            color: #f00;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div id="player"></div>
+        <div id="game-over">GAME OVER</div>
+    </div>
+    <div id="score">Score: 0</div>
+
+    <script>
+        const player = document.getElementById('player');
+        const gameContainer = document.querySelector('.game-container');
+        const gameOverText = document.getElementById('game-over');
+        const scoreElement = document.getElementById('score');
+        
+        let isJumping = false;
+        let gravity = 0.9;
+        let position = 0;
+        let isGameOver = false;
+        let score = 0;
+        
+        // Jump function
+        function control(e) {
+            if (e.keyCode === 32) {
+                if (!isJumping) {
+                    isJumping = true;
+                    jump();
+                }
+            }
+        }
+        
+        function jump() {
+            let count = 0;
+            let timerId = setInterval(function() {
+                // Jump physics
+                if (count === 15) {
+                    clearInterval(timerId);
+                    let downTimerId = setInterval(function() {
+                        if (count === 0) {
+                            clearInterval(downTimerId);
+                            isJumping = false;
+                        }
+                        position -= 5;
+                        count--;
+                        position = position * gravity;
+                        player.style.bottom = position + 'px';
+                    }, 20);
+                }
+                position += 30;
+                count++;
+                position = position * gravity;
+                player.style.bottom = position + 'px';
+            }, 20);
+        }
+        
+        // Generate obstacles
+        function generateObstacles() {
+            let randomTime = Math.random() * 4000 + 1000;
+            let obstaclePosition = 600;
+            
+            if (isGameOver) return;
+            
+            const obstacle = document.createElement('div');
+            obstacle.classList.add('obstacle');
+            gameContainer.appendChild(obstacle);
+            
+            let timerId = setInterval(function() {
+                if (obstaclePosition > 0 && obstaclePosition < 60 && position < 60) {
+                    clearInterval(timerId);
+                    gameOverText.style.display = 'block';
+                    isGameOver = true;
+                    // Remove all obstacles
+                    while (gameContainer.firstChild) {
+                        gameContainer.removeChild(gameContainer.lastChild);
+                    }
+                    gameContainer.appendChild(player);
+                    gameContainer.appendChild(gameOverText);
+                }
+                
+                obstaclePosition -= 10;
+                obstacle.style.right = obstaclePosition + 'px';
+                
+                if (obstaclePosition < -20) {
+                    clearInterval(timerId);
+                    gameContainer.removeChild(obstacle);
+                    score += 10;
+                    scoreElement.textContent = 'Score: ' + score;
+                }
+            }, 20);
+            
+            if (!isGameOver) setTimeout(generateObstacles, randomTime);
+        }
+        
+        // Start game
+        document.addEventListener('keyup', control);
+        generateObstacles();
+    </script>
+</body>
+</html>
