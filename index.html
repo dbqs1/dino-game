@@ -28,7 +28,7 @@
             background-color: #f00;
             position: absolute;
             bottom: 0;
-            right: 0;
+            left: 600px; /* Changed from right: 0 to left: 600px */
         }
         
         #score {
@@ -47,13 +47,43 @@
             font-family: Arial, sans-serif;
             font-size: 30px;
             color: #f00;
+            text-align: center;
+        }
+
+        #restart-button {
+            display: none;
+            position: absolute;
+            top: 60%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: Arial, sans-serif;
+            font-size: 20px;
+            padding: 10px 20px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+
+        #restart-button:hover {
+            background-color: #45a049;
+        }
+
+        .instructions {
+            text-align: center;
+            font-family: Arial, sans-serif;
+            margin-bottom: 20px;
         }
     </style>
 </head>
 <body>
+    <div class="instructions">Press SPACEBAR to jump. Avoid the red obstacles!</div>
     <div class="game-container">
         <div id="player"></div>
         <div id="game-over">GAME OVER</div>
+        <button id="restart-button">Restart Game</button>
     </div>
     <div id="score">Score: 0</div>
 
@@ -62,17 +92,18 @@
         const gameContainer = document.querySelector('.game-container');
         const gameOverText = document.getElementById('game-over');
         const scoreElement = document.getElementById('score');
+        const restartButton = document.getElementById('restart-button');
         
         let isJumping = false;
         let gravity = 0.9;
         let position = 0;
         let isGameOver = false;
         let score = 0;
+        let obstacleTimers = [];
         
-        // Jump function
         function control(e) {
             if (e.keyCode === 32) {
-                if (!isJumping) {
+                if (!isJumping && !isGameOver) {
                     isJumping = true;
                     jump();
                 }
@@ -82,7 +113,6 @@
         function jump() {
             let count = 0;
             let timerId = setInterval(function() {
-                // Jump physics
                 if (count === 15) {
                     clearInterval(timerId);
                     let downTimerId = setInterval(function() {
@@ -103,7 +133,6 @@
             }, 20);
         }
         
-        // Generate obstacles
         function generateObstacles() {
             let randomTime = Math.random() * 4000 + 1000;
             let obstaclePosition = 600;
@@ -115,20 +144,13 @@
             gameContainer.appendChild(obstacle);
             
             let timerId = setInterval(function() {
-                if (obstaclePosition > 0 && obstaclePosition < 60 && position < 60) {
-                    clearInterval(timerId);
-                    gameOverText.style.display = 'block';
-                    isGameOver = true;
-                    // Remove all obstacles
-                    while (gameContainer.firstChild) {
-                        gameContainer.removeChild(gameContainer.lastChild);
-                    }
-                    gameContainer.appendChild(player);
-                    gameContainer.appendChild(gameOverText);
+                if (obstaclePosition > 40 && obstaclePosition < 90 && position < 60) {
+                    gameOver();
+                    return;
                 }
                 
                 obstaclePosition -= 10;
-                obstacle.style.right = obstaclePosition + 'px';
+                obstacle.style.left = obstaclePosition + 'px';
                 
                 if (obstaclePosition < -20) {
                     clearInterval(timerId);
@@ -138,11 +160,46 @@
                 }
             }, 20);
             
+            obstacleTimers.push(timerId);
             if (!isGameOver) setTimeout(generateObstacles, randomTime);
         }
+
+        function gameOver() {
+            isGameOver = true;
+            gameOverText.style.display = 'block';
+            restartButton.style.display = 'block';
+            
+            // Clear all obstacle timers
+            obstacleTimers.forEach(timer => clearInterval(timer));
+            obstacleTimers = [];
+            
+            // Remove all obstacles
+            const obstacles = document.querySelectorAll('.obstacle');
+            obstacles.forEach(obstacle => obstacle.remove());
+        }
+
+        function restartGame() {
+            // Reset game state
+            isGameOver = false;
+            score = 0;
+            position = 0;
+            isJumping = false;
+            
+            // Reset display
+            player.style.bottom = '0px';
+            gameOverText.style.display = 'none';
+            restartButton.style.display = 'none';
+            scoreElement.textContent = 'Score: 0';
+            
+            // Start generating obstacles again
+            generateObstacles();
+        }
+        
+        // Event Listeners
+        document.addEventListener('keyup', control);
+        restartButton.addEventListener('click', restartGame);
         
         // Start game
-        document.addEventListener('keyup', control);
         generateObstacles();
     </script>
 </body>
